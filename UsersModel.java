@@ -1,13 +1,14 @@
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
-
-
-public class UsersModel implements EntenerAccountView  {
+public class UsersModel {
     private String username;
     private String password;
     
@@ -41,35 +42,72 @@ public class UsersModel implements EntenerAccountView  {
         out.close();
     }
 
-    @Override
-    public void tryToEnter(UsersModel us) throws FileNotFoundException {
+    public String tryToEnter(UsersModel us) throws IOException  {
         writetoCsv(us);
-        Scanner scanner = new Scanner(System.in);
-        int enter = 0;
-            while (enter == 0) {
+        List<String> anyAccBan = anyAccountBanned();
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            while (true) {
                 System.out.println("Please enter username: ");
-                String user = scanner.nextLine();
+                String user = br.readLine();
                 if (user.equals(this.username))  {
                     String pass = "pass";
                     while(!pass.equals(this.password)) {
                         System.out.println("Please enter password");
-                        pass = scanner.nextLine();
+                        pass = br.readLine();
                         if(!pass.equals(this.password)) {
                             System.out.println("Password is incorrect, please try again");
                         }
                     }
-                    if(pass.equals(this.password)) {
-                        System.out.println("You entered. Hello " + this.username);
-                        scanner.close();
-                        break;
-                    }
+                        if (pass.equals(this.password) && !anyAccBan.contains(this.username)) {
+                            System.out.println("You entered your account!");
+                            break;           
+                    }    
+                        if(pass.equals(this.password) && anyAccBan.contains(this.username)) {
+                            System.out.println("You account has been banned!");
+                            break;
+                        }
+                        else {
+                            System.out.println("User not found, please try again");
+                            } 
                 }
-                else {
-                    System.out.println("Usern not found, please try again");
-                }
-                
-        }
-        
-        }
+        } return this.username + this.password;
     }
+    
+    public List<String> BanAccount(UsersModel us) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        File bannedFile = new File("BannedAccounts.csv");
+        PrintWriter out = new PrintWriter(bannedFile);
+        List<String> bannedAcs = new ArrayList<>();
+        String enter = tryToEnter(us);
+        if(enter.equals("adminadmin")) {
+            banningProcces(br, out, bannedAcs);
+        }
+        return bannedAcs;
+    }
+
+    private void banningProcces(BufferedReader br, PrintWriter out, List<String> bannedAcs) throws IOException {
+        System.out.println("Hello admin, which person do you want to ban?");
+        String personBan = br.readLine();
+        bannedAcs.add(personBan);
+        System.out.println("What is the reason for ban? ");
+        String reason = br.readLine();
+        System.out.println(personBan + " has been banned");
+        out.println(personBan);
+        out.println(reason + ";"); 
+        out.close();
+    }
+
+    private List<String> anyAccountBanned() {
+        List<String> bannedAcsList = new ArrayList<>();
+        String line = "";
+        try (BufferedReader br = new BufferedReader(new FileReader("C:/Users/danii/OneDrive/Рабочий стол/HomeworkSem5OOP/BannedAccounts.csv"))) {
+            while ((line = br.readLine()) != null) {
+                bannedAcsList.add(line);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return bannedAcsList;
+    }
+}
 
